@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Reef Dive English</title>
+<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+:root{
+ /* Layout: toolbar, one 256x240 pixel stage with title/result screens on top, touch pad below; quiz and editor are full-screen modals */
+ --bg:#080d24; --panel:#101a45; --panel2:#0b1233; --ink:#f8f8f8; --muted:#a9b6ee; --accent:#f8b800; --good:#58d858; --bad:#f86868; --line:#2a3a8c; --sea:#0058f8;
+ --px:'Press Start 2P',ui-monospace,Menlo,Consolas,monospace;
+ --vt:'VT323',ui-monospace,Menlo,Consolas,monospace;
+ --ui:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+ color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--ui);padding-block:14px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brand{font:400 12px/1.3 var(--px);color:var(--accent);margin:0}
+.brand small{display:block;font-size:8px;color:var(--muted);margin-top:6px}
+.btn{font:400 11px/1.2 var(--px);color:var(--ink);background:#1b2a78;border:3px solid #000;padding:12px 14px;min-height:44px;cursor:pointer;box-shadow:inset -3px -3px 0 rgba(0,0,0,.35),inset 3px 3px 0 rgba(255,255,255,.18)}
+.btn.primary{background:var(--accent);color:#1a1200}
+.btn.danger{background:var(--bad);color:#200}
+.btn.small{padding:8px 10px;min-height:36px;font-size:9px}
+.btn:active:not(:disabled){transform:translateY(2px)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.stage{position:relative;width:100%;aspect-ratio:256/240;background:var(--sea);border:4px solid #000;outline:2px solid var(--line);overflow:hidden}
+canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+.screen{position:absolute;inset:0;display:flex;background:rgba(0,20,96,.84);overflow:auto;padding:10px}
+.panel{margin:auto;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;max-width:100%}
+.big{font:400 clamp(20px,6vw,34px)/1.15 var(--px);color:var(--accent);margin:0;text-shadow:3px 3px 0 #000}
+.tag{font:400 8px/1.5 var(--px);color:var(--muted);margin:0}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row.center{justify-content:center}
+.how{list-style:none;margin:0;padding:0;font:400 18px/1.2 var(--vt);color:#dfe6ff}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0;width:100%}
+.stats div{background:#000;border:2px solid var(--line);padding:8px}
+.stats .wide{grid-column:1/-1}
+.stats dt{font:400 8px/1.4 var(--px);color:var(--muted)}
+.stats dd{margin:6px 0 0;font:400 14px/1.2 var(--px);color:var(--accent)}
+.reslist{list-style:none;margin:0;padding:0;width:100%;text-align:left;display:flex;flex-direction:column;gap:6px;font:400 18px/1.1 var(--vt)}
+.reslist li{display:flex;gap:8px;align-items:flex-start}
+.tagok,.tagno{font:400 7px/1 var(--px);padding:4px 5px;flex:none;margin-top:2px;color:#000}
+.tagok{background:var(--good)}.tagno{background:var(--bad)}
+.res-msg{font:400 20px/1.1 var(--vt);margin:0;color:#dfe6ff}
+.controls{display:flex;justify-content:space-between;align-items:center;gap:16px;user-select:none;-webkit-user-select:none}
+.dpad{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px)}
+.cb{background:#1b2a78;border:3px solid #000;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:pointer;padding:0;box-shadow:inset -3px -3px 0 rgba(0,0,0,.35),inset 3px 3px 0 rgba(255,255,255,.18)}
+.cb.on{background:#3550d8}
+.cb i{display:block;width:20px;height:20px;background:var(--ink);clip-path:polygon(50% 0,100% 100%,0 100%);pointer-events:none}
+.cb[data-k=right] i{transform:rotate(90deg)}.cb[data-k=down] i{transform:rotate(180deg)}.cb[data-k=left] i{transform:rotate(-90deg)}
+.cb.up{grid-area:1/2}.cb.left{grid-area:2/1}.cb.right{grid-area:2/3}.cb.down{grid-area:3/2}
+.swim{width:104px;height:104px;font:400 13px/1 var(--px);color:#1a1200;background:var(--accent);border:4px solid #000;touch-action:none;cursor:pointer;box-shadow:inset -4px -4px 0 rgba(0,0,0,.3),inset 4px 4px 0 rgba(255,255,255,.35)}
+.swim.on{background:#ffd84a;transform:translateY(2px)}
+.keys{font:400 18px/1.2 var(--vt);color:var(--muted);margin:0;text-align:center}
+.modal{position:fixed;inset:0;z-index:50;display:flex;background:rgba(2,6,30,.9);overflow:auto;padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.card{margin:auto;width:min(100%,640px);background:var(--panel);border:4px solid var(--ink);box-shadow:0 0 0 4px #000;padding:16px;display:flex;flex-direction:column;gap:12px}
+.qtop{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.qhead{font:400 10px/1.3 var(--px);color:var(--accent)}
+.badge{font:400 8px/1 var(--px);background:#000;border:2px solid var(--line);padding:5px 6px;color:var(--muted);flex:none}
+.qtext{font:400 27px/1.1 var(--vt);margin:0;overflow-wrap:anywhere}
+.mc{display:grid;gap:8px}
+.ob{display:flex;gap:10px;align-items:center;text-align:left;font:400 24px/1.05 var(--vt);color:var(--ink);background:var(--panel2);border:3px solid #000;outline:2px solid var(--line);padding:8px 10px;min-height:46px;cursor:pointer}
+.ob .l{font:400 10px/1 var(--px);background:var(--accent);color:#1a1200;padding:6px;flex:none}
+.ob:hover:not(:disabled){background:#1b2a78}
+.ob.ok{outline-color:var(--good);background:#0c4a22}.ob.no{outline-color:var(--bad);background:#4a1010}
+.ob:disabled{cursor:default}
+.es{display:flex;gap:8px;flex-wrap:wrap}
+.es input{flex:1 1 200px;min-width:0;font:400 24px/1 var(--vt);background:#000;color:var(--ink);border:3px solid var(--line);padding:8px 10px}
+.fb{font:400 22px/1.15 var(--vt);padding:10px;border:3px solid #000;margin:0}
+.fb.ok{background:#0c4a22;color:#c9ffd6}.fb.no{background:#4a1010;color:#ffd2d2}
+.sheet h2{font:400 13px/1.3 var(--px);margin:0;color:var(--accent)}
+.sheet h3{font:400 11px/1.4 var(--px);margin:0}
+.sh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.qlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.qrow{display:flex;gap:8px;align-items:center;background:var(--panel2);border:2px solid var(--line);padding:8px}
+.qrow .qt{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qrow .badge.essay{color:var(--accent)}
+form label,form legend{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+form fieldset{border:2px solid var(--line);margin:0;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+form textarea,form input[type=text],.io textarea{width:100%;font:15px/1.4 var(--ui);background:#000;color:var(--ink);border:2px solid var(--line);padding:8px}
+.opt,.keyrow{display:flex;gap:8px;align-items:center}
+.opt .letter{font:400 10px/1 var(--px);color:var(--accent);width:14px}
+.opt input[type=radio]{width:20px;height:20px;flex:none;accent-color:var(--accent)}
+.seg{display:flex;gap:0}
+.seg button{flex:1;font:400 10px/1.2 var(--px);padding:10px;background:var(--panel2);color:var(--muted);border:3px solid #000;cursor:pointer;min-height:40px}
+.seg button[aria-pressed=true]{background:var(--accent);color:#1a1200}
+.err{color:var(--bad);font-size:14px;margin:0;min-height:1em}
+.io summary{cursor:pointer;font-size:14px;color:var(--muted)}
+.io .row{margin-top:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+<style>
+.stage{width:min(100%,max(300px,calc((100vh - 200px)*1.0667)));margin-inline:auto}
+@media (hover:hover) and (pointer:fine){.controls{display:none}}
+.panel{gap:clamp(6px,2vw,12px)}
+.who{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%}
+.fld{font:400 20px/1 var(--vt);background:#000;color:var(--ink);border:3px solid var(--line);padding:8px 10px;min-width:0}
+.who .fld{flex:1 1 120px;max-width:210px}
+select.fld{max-width:100%}
+.perr{font:400 18px/1 var(--vt);color:var(--bad);margin:0}
+.perr:empty{display:none}
+.how{margin:0;font:400 18px/1.2 var(--vt);color:#dfe6ff;max-width:34ch}
+.card.wide{width:min(100%,760px)}
+.card.result{align-items:center;text-align:center}
+.tscroll{overflow:auto;max-height:50vh;border:2px solid var(--line)}
+.tbl{border-collapse:collapse;width:100%;font-size:14px;white-space:nowrap}
+.tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+.tbl th{position:sticky;top:0;background:var(--panel2);font:400 8px/1.3 var(--px);color:var(--muted)}
+.tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
+.tbl th.n{text-align:right}
+.tbl tr.me td{background:#1d3a9e;color:#fff}
+.tbl td.empty{white-space:normal;color:var(--muted);text-align:center;padding:16px}
+</style>
+<div class="wrap">
+ <div class="bar">
+  <h1 class="brand">REEF DIVE<small>ENGLISH QUIZ · JUNIOR HIGH</small></h1>
+  <button id="muteBtn" class="btn small" type="button">SOUND: ON</button>
+ </div>
+ <div class="stage" id="stage">
+  <canvas id="game" width="256" height="240" aria-label="Underwater diving game"></canvas>
+  <div id="titleScreen" class="screen"><div class="panel">
+   <h2 class="big" style="font-size:clamp(18px,5.5vw,30px)">REEF DIVE</h2>
+   <p class="tag">ENGLISH QUIZ ADVENTURE</p>
+   <div class="who">
+    <label class="sr" for="pName">Your name or nickname</label><input id="pName" class="fld" type="text" maxlength="24" placeholder="Your name" autocomplete="off">
+    <label class="sr" for="pClass">Class</label><input id="pClass" class="fld" type="text" maxlength="12" placeholder="Class (8B)" autocomplete="off">
+   </div>
+   <p class="perr" id="pErr" role="alert"></p>
+   <div class="row center"><button id="startBtn" class="btn primary" type="button">START</button><button id="boardBtn" class="btn" type="button">LEADERBOARD</button></div>
+   <div class="row center"><button id="mineBtn" class="btn small" type="button">MY SCORES</button><button id="editBtn" class="btn small" type="button">TEACHER</button></div>
+   <p class="how" id="myStat"></p>
+  </div></div>
+ </div>
+ <div class="controls" id="controls">
+  <div class="dpad">
+   <button class="cb up" data-k="up" type="button" aria-label="Swim up"><i></i></button>
+   <button class="cb left" data-k="left" type="button" aria-label="Left"><i></i></button>
+   <button class="cb right" data-k="right" type="button" aria-label="Right"><i></i></button>
+   <button class="cb down" data-k="down" type="button" aria-label="Down"><i></i></button>
+  </div>
+  <button class="swim" data-k="swim" type="button">SWIM</button>
+ </div>
+ <p class="keys">Keyboard: ← → move · Space / ↑ swim · ↓ sink faster</p>
+</div>
+
+<div id="quiz" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="qHead">
+ <div class="card" id="quizCard" tabindex="-1">
+  <div class="qtop"><span id="qHead" class="qhead">QUESTION 1 OF 5</span><span id="qType" class="badge">Multiple choice</span></div>
+  <p id="qText" class="qtext"></p>
+  <div id="qMc" class="mc"></div>
+  <form id="qEs" class="es" autocomplete="off"><label for="qInput" class="sr">Your answer</label><input id="qInput" type="text" placeholder="Type your answer..." autocapitalize="off" autocorrect="off" spellcheck="false"><button id="qSend" class="btn primary" type="submit">ANSWER</button></form>
+  <p id="qFb" class="fb" hidden role="status"></p>
+  <div class="row"><button id="qRetry" class="btn primary" type="button" hidden>TRY AGAIN</button><button id="qNext" class="btn primary" type="button" hidden>CONTINUE</button><button id="qSkip" class="btn" type="button">SKIP</button></div>
+ </div>
+</div>
+
+<div id="resultScreen" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="resTitle">
+ <div class="card result">
+  <h2 class="big" id="resTitle" style="font-size:clamp(16px,4.6vw,26px)">FINISHED!</h2>
+  <p class="res-msg" id="resMsg"></p>
+  <dl class="stats">
+   <div><dt>FINAL SCORE</dt><dd id="resScore">0</dd></div>
+   <div><dt>COINS</dt><dd id="resCoins">0</dd></div>
+   <div class="wide"><dt>QUESTIONS ANSWERED</dt><dd id="resQs">0 of 5</dd></div>
+  </dl>
+  <ul class="reslist" id="resList"></ul>
+  <p class="res-msg" id="resSave" role="status"></p>
+  <p class="res-msg" id="resRank"></p>
+  <div class="row center"><button id="againBtn" class="btn primary" type="button">PLAY AGAIN</button><button id="resBoardBtn" class="btn" type="button">LEADERBOARD</button><button id="menuBtn" class="btn" type="button">MENU</button></div>
+ </div>
+</div>
+
+<div id="board" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="bdTitle">
+ <div class="card sheet wide">
+  <div class="sh"><h2 id="bdTitle">LEADERBOARD</h2><button id="bdClose" class="btn small" type="button">CLOSE</button></div>
+  <div class="seg" role="group" aria-label="Ranking type">
+   <button type="button" id="bdT0" aria-pressed="true">TOP SCORE</button>
+   <button type="button" id="bdT1" aria-pressed="false">MOST CORRECT</button>
+   <button type="button" id="bdT2" aria-pressed="false">FASTEST 5/5</button>
+  </div>
+  <div class="row"><label class="sr" for="bdClass">Class</label><select id="bdClass" class="fld"><option value="">All classes</option></select><button id="bdRefresh" class="btn small" type="button">REFRESH</button></div>
+  <p class="note" id="bdNote" role="status"></p>
+  <div class="tscroll"><table class="tbl"><thead><tr id="bdHead"></tr></thead><tbody id="bdBody"></tbody></table></div>
+ </div>
+</div>
+
+<div id="mine" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mineTitle">
+ <div class="card sheet">
+  <div class="sh"><h2 id="mineTitle">MY SCORES</h2><button id="mineClose" class="btn small" type="button">CLOSE</button></div>
+  <p class="note" id="mineNote"></p>
+  <div class="tscroll"><table class="tbl"><thead><tr><th>DATE</th><th>SCORE</th><th>COINS</th><th>CORRECT</th><th>RESULT</th></tr></thead><tbody id="mineBody"></tbody></table></div>
+ </div>
+</div>
+
+<div id="auth" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="auTitle">
+ <form class="card" id="auForm">
+  <h2 id="auTitle" class="qhead">TEACHER PASSCODE</h2>
+  <label class="sr" for="auPass">Passcode</label>
+  <input id="auPass" class="fld" type="password" autocomplete="off" placeholder="Passcode">
+  <p class="err" id="auErr" role="alert"></p>
+  <div class="row"><button class="btn primary" type="submit" id="auGo">UNLOCK</button><button type="button" id="auCancel" class="btn">CANCEL</button></div>
+ </form>
+</div>
+
+<div id="editor" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="edTitle">
+ <div class="card sheet">
+  <div class="sh"><h2 id="edTitle">QUESTION EDITOR</h2><button id="edClose" class="btn small" type="button">CLOSE</button></div>
+  <div id="edList">
+   <label class="check"><input type="checkbox" id="optShuffle"> Pick 5 random questions from the bank each game</label>
+   <p class="note" id="edCount"></p>
+   <p class="note" id="edSync" role="status"></p>
+   <ol id="qList" class="qlist"></ol>
+   <div class="row" style="margin-top:10px"><button id="addQ" class="btn primary small" type="button">+ ADD QUESTION</button><button id="resetQ" class="btn small" type="button">DEFAULT QUESTIONS</button></div>
+   <details class="io" style="margin-top:12px"><summary>Copy / paste questions (JSON)</summary>
+    <textarea id="ioText" rows="6" aria-label="Questions as JSON"></textarea>
+    <div class="row"><button id="ioCopy" class="btn small" type="button">COPY QUESTIONS</button><button id="ioApply" class="btn small" type="button">APPLY TEXT</button></div>
+    <p class="note" id="ioMsg"></p></details>
+  </div>
+  <form id="edForm" hidden novalidate>
+   <h3 id="formTitle">New question</h3>
+   <div class="seg" role="group" aria-label="Question type"><button type="button" id="tMc" aria-pressed="true">MULTIPLE CHOICE</button><button type="button" id="tEs" aria-pressed="false">ESSAY</button></div>
+   <div><label for="fQ">Question</label><textarea id="fQ" rows="3"></textarea></div>
+   <fieldset id="mcBox"><legend>Choices. Select the circle of the correct answer.</legend>
+    <div class="opt"><input type="radio" name="fC" id="fC0" value="0" checked><span class="letter">A</span><input type="text" id="fO0" aria-label="Choice A"></div>
+    <div class="opt"><input type="radio" name="fC" id="fC1" value="1"><span class="letter">B</span><input type="text" id="fO1" aria-label="Choice B"></div>
+    <div class="opt"><input type="radio" name="fC" id="fC2" value="2"><span class="letter">C</span><input type="text" id="fO2" aria-label="Choice C"></div>
+    <div class="opt"><input type="radio" name="fC" id="fC3" value="3"><span class="letter">D</span><input type="text" id="fO3" aria-label="Choice D"></div>
+   </fieldset>
+   <fieldset id="esBox"><legend>Accepted answers (you can add several)</legend>
+    <div id="keys" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div><button type="button" id="addKey" class="btn small">+ ADD ANSWER</button></div>
+    <p class="note">A student answer is correct if it matches any accepted answer. Capital letters and punctuation are ignored.</p>
+   </fieldset>
+   <div><label for="fH">Hint shown after a wrong answer</label><input type="text" id="fH"></div>
+   <p class="err" id="fErr" role="alert"></p>
+   <div class="row"><button type="submit" class="btn primary">SAVE QUESTION</button><button type="button" id="fCancel" class="btn">CANCEL</button></div>
+  </form>
+ </div>
+</div>
+<script>
+/* ===== SETUP (teacher): paste your Google Apps Script web app URL between the quotes.
+   Leave it empty to play without online scores (scores stay on each device). ===== */
+const BACKEND_URL='https://script.google.com/macros/s/AKfycbywEXfxOngWgQirLaGfRVPQx3jMSiJ30LdzdcqGaWNCIByrE8j1hgICe8J4UAZSwEJx/exec';
+(()=>{
+'use strict';
+const API=(typeof BACKEND_URL==='string'?BACKEND_URL:'').trim();
+const $=(s,r=document)=>r.querySelector(s);
+const W=256,H=240,T=16,COLS=228,ROWS=15,SURF=32,GOALX=222*T-2;
+const canvas=$('#game'),g=canvas.getContext('2d');
+g.imageSmoothingEnabled=false;
+
+/* ---------- sprites ---------- */
+function cv(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
+function sprite(rows,pal){const c=cv(16,16),x=c.getContext('2d');rows.forEach((r,y)=>{r=r.padEnd(16,'.').slice(0,16);for(let i=0;i<16;i++){const k=r[i];if(k!=='.'&&pal[k]){x.fillStyle=pal[k];x.fillRect(i,y,1,1)}}});return c}
+const diverPal={y:'#f8b800',o:'#c87800',g:'#a4e4fc',k:'#000',t:'#00a8a8',d:'#005858',s:'#fcb890',f:'#f83800',a:'#bcbcbc'};
+const diverTop=['....yyyyyy......','...yyyyyyyyy....','...yygggggyyy...','...yggggkggoy...','...yyggggggoy...','....yyyyyyoo....','aa..ttttttt.....','aaatttttttttt...','aaaattttttttts..','aaaddddddddd....','..attttttttt....','...tttttttt.....'];
+const diver=[sprite([...diverTop,'...ttt..ttt.....','...ttt..ttt.....','..fffff.fffff...','.ffffff.ffffff..'],diverPal),
+ sprite([...diverTop,'...ttt...ttt....','..ttt.....ttt...','.fffff.....fffff','fffff.......ffff'],diverPal)];
+const jPal={J:'#9878f8',j:'#d8b8f8',w:'#fcfcfc',k:'#000'};
+const jTop=['.....JJJJJJ.....','...JJjjjjjjJJ...','..JjjjjjjjjjjJ..','.JjwwwjjjjwwwjJ.','.JjwkwjjjjwkwjJ.','.JjjjjjjjjjjjjJ.','..JjjjjjjjjjjJ..','...JJjjjjjjJJ...','....JJJJJJJJ....'];
+const jelly=[sprite([...jTop,'...j.j.jj.j.j...','...j.j.jj.j.j...','..j..j.jj.j..j..','..j..j....j..j..','.j...j....j...j.'],jPal),
+ sprite([...jTop,'....j.j..j.j....','...j..j..j..j...','...j...jj...j...','..j...j..j...j..','..j....jj....j..'],jPal)];
+const fPal={o:'#f89800',y:'#fcd800',s:'#fcd800',w:'#fcfcfc',k:'#000',T:'#c85800',c:'#fce0a8'};
+const bl=['','',''];
+const fishA=sprite([...bl,'......s..s......','.....oooooo.....','..ooooooooooo...','.yooowwooooooo..','.oooowkooooooTT.','.ooooooooooooTT.','.ccccccooooooT..','..ccccccccooo...','...ccccccccc....','....sooooos.....'],fPal);
+const fishB=sprite([...bl,'......s..s......','.....oooooo.....','..ooooooooooo...','.yooowwooooooTT.','.oooowkooooooTT.','.ooooooooooooT..','.ccccccooooooo..','..ccccccccooo...','...ccccccccc....','....sooooos.....'],fPal);
+const fish=[fishA,fishB];
+function mkRock(){const c=cv(16,16),x=c.getContext('2d');x.fillStyle='#00a800';x.fillRect(0,0,16,16);x.fillStyle='#80d010';x.fillRect(0,0,16,2);x.fillRect(0,0,1,16);x.fillStyle='#005800';x.fillRect(0,14,16,2);x.fillRect(15,0,1,16);x.fillStyle='#006c00';[[4,5],[10,9],[6,11],[11,4]].forEach(([a,b])=>x.fillRect(a,b,2,2));x.fillStyle='#58d858';[[3,9],[9,3],[12,11]].forEach(([a,b])=>x.fillRect(a,b,1,1));return c}
+const QM=['.######.','##....##','......##','....###.','...##...','...##...','........','...##...'];
+function mkBlock(base,q){const c=cv(16,16),x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,16,16);x.fillStyle='#503000';x.fillRect(0,0,16,1);x.fillRect(0,15,16,1);x.fillRect(0,0,1,16);x.fillRect(15,0,1,16);[[2,2],[12,2],[2,12],[12,12]].forEach(([a,b])=>x.fillRect(a,b,2,2));
+ if(q){QM.forEach((r,j)=>{for(let i=0;i<8;i++)if(r[i]==='#'){x.fillStyle='#503000';x.fillRect(4+i+1,4+j+1,1,1)}});QM.forEach((r,j)=>{for(let i=0;i<8;i++)if(r[i]==='#'){x.fillStyle='#fcfcfc';x.fillRect(4+i,4+j,1,1)}})}return c}
+const spr={rock:mkRock(),q1:mkBlock('#f8b800',true),q2:mkBlock('#fcd860',true),used:mkBlock('#ac7c00',false)};
+
+/* ---------- level ---------- */
+const map=[...Array(ROWS)].map(()=>new Uint8Array(COLS));
+const fill=(a,b,c,d)=>{for(let r=b;r<=d;r++)for(let i=a;i<=c;i++)map[r][i]=1};
+const gaps=[[38,41],[66,70],[104,108],[134,139],[180,183]];
+fill(0,13,COLS-1,14);
+gaps.forEach(([a,b])=>{for(let r=13;r<=14;r++)for(let i=a;i<=b;i++)map[r][i]=0});
+[[22,11,24,12],[46,8,49,8],[52,7,56,7],[78,11,81,12],[89,8,95,8],[112,9,115,9],[142,9,144,12],[150,6,153,6],[165,8,171,8],[190,10,192,12],[200,9,202,12],[222,12,222,12]].forEach(a=>fill(...a));
+const blockDefs=[[30,10],[54,4],[92,5],[124,12],[168,4]];
+const coralDefs=[[46,8,2],[49,8,2],[52,7,2],[56,7,2],[89,8,2],[95,8,2],[143,9,2],[150,6,2],[153,6,2],[165,8,2],[171,8,2],[201,9,3],[8,13,2],[18,13,2],[60,13,2],[118,13,3],[164,13,2],[212,13,2]];
+const coinDefs=[];
+[[12,16,11],[26,28,8],[34,36,12],[38,41,10],[47,48,7],[58,62,9],[66,70,9],[74,76,11],[84,87,7],[98,101,9],[104,108,11],[112,116,6],[128,131,11],[134,139,10],[146,148,6],[156,160,8],[172,176,10],[180,183,9],[186,188,7],[196,198,8],[206,210,11],[214,218,6]].forEach(([a,b,r])=>{for(let i=a;i<=b;i++)coinDefs.push([i,r])});
+const jellyDefs=[[62,8],[98,5],[132,7],[174,7],[208,6]];
+const solid=(c,r)=>c<0||c>=COLS?true:(r<0||r>=ROWS?false:map[r][c]!==0);
+
+/* ---------- state ---------- */
+let state='title',tick=0,acc=0,last=0;
+let score=0,coins=0,answered=0,time=300,timeFrames=0,swimEdge=false,fishTimer=90;
+const p={x:48,y:96,w:10,h:14,vx:0,vy:0,face:1,invuln:0,hold:0,frame:0};
+const cam={x:0};
+let blocks=[],bmap=new Map(),coinList=[],jellies=[],fishes=[],bubbles=[],floats=[],runQs=[];
+const keys={left:false,right:false,down:false,swim:false},touch={left:false,right:false,down:false,swim:false};
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pad=(n,l)=>String(Math.max(0,n)).padStart(l,'0');
+
+function resetLevel(){
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(map[r][c]===2||map[r][c]===3)map[r][c]=0;
+ blocks=blockDefs.map(([c,r],i)=>{map[r][c]=2;return{c,r,idx:i,state:0,armed:true,bump:0,q:runQs[i]}});
+ bmap=new Map(blocks.map(b=>[b.r*COLS+b.c,b]));
+ coinList=coinDefs.map(([c,r])=>({x:c*T,y:r*T,got:false}));
+ jellies=jellyDefs.map(([c,r])=>({x:c*T+2,y:r*T+2,y0:r*T+2,w:12,h:12,mode:'sink',t:20,vx:0,vy:0,dir:-1,frame:0}));
+ fishes=[];bubbles=[];floats=[];fishTimer=90;
+ score=0;coins=0;answered=0;time=300;timeFrames=0;swimEdge=false;
+ Object.assign(p,{x:48,y:96,vx:0,vy:0,face:1,invuln:0,hold:0,frame:0});cam.x=0;
+}
+
+/* ---------- audio ---------- */
+let ac=null,muted=false;
+function audio(){if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(ac&&ac.state==='suspended')ac.resume();return ac}
+function tone(f0,f1,d,type='square',v=.05,delay=0){if(muted)return;const a=audio();if(!a)return;const t=a.currentTime+delay,o=a.createOscillator(),n=a.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);if(f1!==f0)o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+d);n.gain.setValueAtTime(v,t);n.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(n);n.connect(a.destination);o.start(t);o.stop(t+d+.02)}
+const sfx={swim(){tone(260,520,.08,'square',.03)},coin(){tone(988,988,.07,'square',.04);tone(1319,1319,.16,'square',.04,.07)},hit(){tone(220,70,.3,'sawtooth',.06)},ok(){[523,659,784,1047].forEach((f,i)=>tone(f,f,.12,'square',.05,i*.09))},no(){tone(240,120,.3,'sawtooth',.05)},fall(){tone(500,60,.5,'triangle',.07)},end(){[392,523,659,784,1047].forEach((f,i)=>tone(f,f,.16,'square',.05,i*.12))}};
+
+/* ---------- physics ---------- */
+const GRAV_LAND=0.375,GRAV_WATER=GRAV_LAND*0.3; // water gravity is 30% of land gravity
+function collideX(){const x0=Math.floor(p.x/T),x1=Math.floor((p.x+p.w-.001)/T),y0=Math.floor(p.y/T),y1=Math.floor((p.y+p.h-.001)/T);
+ for(let r=y0;r<=y1;r++)for(let c=x0;c<=x1;c++)if(solid(c,r)){if(p.vx>0)p.x=c*T-p.w;else if(p.vx<0)p.x=(c+1)*T;p.vx=0;return}}
+function collideY(){const x0=Math.floor(p.x/T),x1=Math.floor((p.x+p.w-.001)/T),y0=Math.floor(p.y/T),y1=Math.floor((p.y+p.h-.001)/T);
+ for(let r=y0;r<=y1;r++)for(let c=x0;c<=x1;c++)if(solid(c,r)){if(p.vy>0)p.y=r*T-p.h;else if(p.vy<0)p.y=(r+1)*T;p.vy=0;return}}
+const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+function popText(s,x,y,col){floats.push({s,x,y,life:50,col:col||'#fff'})}
+function stroke(){p.vy=Math.max(-1.7,Math.min(p.vy,0)-1.0);sfx.swim();for(let i=0;i<3;i++)bubbles.push({x:p.x+(p.face>0?8:1)+rnd(-1,2),y:p.y+rnd(0,3),vx:rnd(-.15,.15),vy:rnd(-.9,-.5),r:Math.random()<.5?2:3,ph:rnd(0,6)})}
+function damage(fromX){if(p.invuln>0)return;p.invuln=110;coins=Math.max(0,coins-2);score=Math.max(0,score-200);p.vx=p.x+5<fromX?-2:2;p.vy=-.6;popText('-200',p.x,p.y-6,'#ff8888');sfx.hit()}
+function fall(){sfx.fall();coins=Math.max(0,coins-3);score=Math.max(0,score-200);popText('-200',Math.min(p.x,cam.x+W-40),H-30,'#ff8888');
+ const cx=p.x/T;let nx=p.x;for(const [a,b] of gaps)if(cx>=a-1&&cx<=b+1)nx=(a-2)*T;
+ Object.assign(p,{x:nx,y:96,vx:0,vy:0,invuln:100})}
+
+function update(){
+ const L=keys.left||touch.left,R=keys.right||touch.right,D=keys.down||touch.down,S=keys.swim||touch.swim;
+ if(++timeFrames>=60){timeFrames=0;time--;if(time<=0){time=0;finish('time');return}}
+ if(swimEdge){stroke();swimEdge=false;p.hold=1}else if(S){p.hold++;if(p.hold>=16&&(p.hold-16)%12===0)stroke()}else p.hold=0;
+ if(L&&!R){p.vx=Math.max(-1.15,p.vx-.09);p.face=-1}else if(R&&!L){p.vx=Math.min(1.15,p.vx+.09);p.face=1}else{p.vx*=.93;if(Math.abs(p.vx)<.02)p.vx=0}
+ p.vy+=D?.2:GRAV_WATER;const ms=D?1.8:.85;if(p.vy>ms)p.vy=ms;
+ p.x+=p.vx;collideX();p.y+=p.vy;collideY();
+ p.x=Math.max(0,Math.min(COLS*T-p.w,p.x));
+ if(p.y<SURF+2){p.y=SURF+2;if(p.vy<0)p.vy=0}
+ p.frame=p.vy<-.2?1:0;if(p.invuln>0)p.invuln--;
+ if(p.y>H+6){fall()}
+ cam.x+=(Math.max(0,Math.min(COLS*T-W,p.x+5-W/2))-cam.x)*.15;
+ // question blocks: touch or bump
+ for(const b of blocks){if(b.bump>0)b.bump--;if(b.state)continue;const bx=b.c*T,by=b.r*T;
+  const t=p.x-1.5<bx+T&&p.x+p.w+1.5>bx&&p.y-1.5<by+T&&p.y+p.h+1.5>by;
+  if(t){if(b.armed){b.armed=false;openQuiz(b);return}}else b.armed=true}
+ // coins
+ const pr={x:p.x,y:p.y,w:p.w,h:p.h};
+ for(const c of coinList){if(!c.got&&hit(pr,{x:c.x+4,y:c.y+2,w:8,h:12})){c.got=true;coins++;score+=50;sfx.coin()}}
+ // jellyfish: pulse toward the diver in a zig-zag
+ for(const j of jellies){
+  if(Math.abs(j.x-p.x)>150){j.y=j.y0+Math.sin(tick/30+j.x)*4;j.frame=0;continue}
+  if(--j.t<=0){j.dir=p.x+5>=j.x+6?1:-1;
+   if(j.mode==='sink'&&j.y>p.y+2){j.mode='rise';j.t=24}
+   else if(j.mode==='rise'){j.mode='sink';j.t=26}
+   else{j.mode='sink';j.t=20}}
+  if(j.mode==='rise'){j.vy=-1.3*(.4+.6*j.t/24);j.vx=j.dir*.9;j.frame=1}else{j.vy=.55;j.vx=j.dir*.35;j.frame=0}
+  j.x+=j.vx;j.y=Math.max(40,Math.min(194,j.y+j.vy));
+  if(hit(pr,{x:j.x+1,y:j.y+1,w:j.w-2,h:j.h-2}))damage(j.x+6)}
+ // pufferfish swim straight to the left
+ if(p.x>160&&--fishTimer<=0){fishTimer=Math.floor(rnd(110,210));fishes.push({x:cam.x+W+8,y:Math.floor(rnd(52,176)),vx:-rnd(.8,1.2),w:12,h:9})}
+ fishes=fishes.filter(f=>f.x>cam.x-24);
+ for(const f of fishes){f.x+=f.vx;if(hit(pr,{x:f.x+3,y:f.y+1,w:f.w-2,h:f.h-1}))damage(f.x+6)}
+ // bubbles and floating text
+ for(const b of bubbles){b.ph+=.15;b.x+=b.vx+Math.sin(b.ph)*.25;b.y+=b.vy}
+ bubbles=bubbles.filter(b=>b.y>SURF+2);
+ for(const f of floats){f.y-=.5;f.life--}floats=floats.filter(f=>f.life>0);
+ if(p.x+p.w>=GOALX)finish('goal');
+}
+
+/* ---------- drawing ---------- */
+function txt(s,x,y,col){g.fillStyle='#00339a';g.fillText(s,x+1,y+1);g.fillStyle=col||'#fff';g.fillText(s,x,y)}
+function drawCoin(x,y,f){const w=[8,6,2,6][f],cx=x+8;g.fillStyle='#ac7c00';g.fillRect(cx-w/2-1,y+2,w+2,12);g.fillStyle='#f8b800';g.fillRect(cx-w/2,y+3,w,10);if(w>=6){g.fillStyle='#fce0a8';g.fillRect(cx-w/2+1,y+4,1,7)}}
+function drawCoral(c,baseRow,h){const x0=c*T+6,base=baseRow*T,top=base-h*T+2;
+ g.fillStyle='#f878a8';g.fillRect(x0,top,4,base-top);g.fillStyle='#c8307c';g.fillRect(x0+3,top,1,base-top);
+ for(let y=base-10,k=0;y>top+4;y-=10,k++){const s=k%2?1:-1,ax=s<0?x0-5:x0+4;g.fillStyle='#f878a8';g.fillRect(ax,y,5,3);g.fillRect(s<0?ax:ax+2,y-5,3,5)}
+ g.fillStyle='#f878a8';g.fillRect(x0-1,top-3,6,3)}
+function drawGoal(cx){const px=GOALX+2+5;
+ g.fillStyle='#fcfcfc';g.fillRect(px,44,2,150);g.fillStyle='#f8b800';g.fillRect(px-1,40,4,4);
+ const w=Math.round(Math.sin(tick/10)*1);g.fillStyle='#00a800';g.fillRect(px-14,46,14,10);g.fillRect(px-14+w,50,12,6);g.fillStyle='#fcfcfc';g.fillRect(px-9,49,3,3)}
+function draw(){
+ g.imageSmoothingEnabled=false;
+ const cx=Math.round(cam.x);
+ g.fillStyle='#a4e4fc';g.fillRect(0,0,W,SURF);
+ g.fillStyle='#0058f8';g.fillRect(0,SURF,W,H-SURF);
+ for(let x=0;x<W;x+=4){const o=Math.round(Math.sin((x+cx)/10+tick/20));g.fillStyle='#fcfcfc';g.fillRect(x,SURF-2+o,4,2);g.fillStyle='#3cbcfc';g.fillRect(x,SURF+o,4,2)}
+ g.save();g.translate(-cx,0);
+ for(const [c,r,h] of coralDefs)if(c*T>cx-20&&c*T<cx+W+20)drawCoral(c,r,h);
+ const c0=Math.max(0,Math.floor(cx/T)),c1=Math.min(COLS-1,c0+W/T+1);
+ for(let r=2;r<ROWS;r++)for(let c=c0;c<=c1;c++){const v=map[r][c];if(!v)continue;let y=r*T;
+  if(v===1)g.drawImage(spr.rock,c*T,y);
+  else{const b=bmap.get(r*COLS+c);if(b&&b.bump>0)y-=Math.round(Math.sin(b.bump/10*Math.PI)*5);
+   g.drawImage(v===2?((tick>>4)%3===2?spr.q2:spr.q1):spr.used,c*T,y)}}
+ drawGoal();
+ const cf=(tick>>3)&3;
+ for(const c of coinList)if(!c.got&&c.x>cx-16&&c.x<cx+W)drawCoin(c.x,c.y,cf);
+ for(const j of jellies)if(j.x>cx-24&&j.x<cx+W+24)g.drawImage(jelly[j.frame],Math.round(j.x-2),Math.round(j.y-2));
+ for(const f of fishes)g.drawImage(fish[(tick>>3)&1],Math.round(f.x-2),Math.round(f.y-4));
+ if(!(p.invuln>0&&((p.invuln>>2)&1))){
+  g.save();const sx=Math.round(p.x-3),sy=Math.round(p.y-1);
+  if(p.face<0){g.translate(sx+16,sy);g.scale(-1,1);g.drawImage(diver[p.frame],0,0)}else g.drawImage(diver[p.frame],sx,sy);
+  g.restore()}
+ g.fillStyle='#fcfcfc';
+ for(const b of bubbles){const s=b.r;g.fillRect(Math.round(b.x),Math.round(b.y),s,s);g.fillStyle='#a4e4fc';g.fillRect(Math.round(b.x),Math.round(b.y),1,1);g.fillStyle='#fcfcfc'}
+ g.font='8px "Press Start 2P",monospace';g.textBaseline='top';
+ for(const f of floats)txt(f.s,Math.round(f.x),Math.round(f.y),f.col);
+ g.restore();
+ // HUD
+ g.font='8px "Press Start 2P",monospace';g.textBaseline='top';
+ txt('DIVER',8,6);txt(pad(score,6),8,18);
+ drawCoinSmall(80,17);txt('x'+pad(coins,2),96,18);
+ txt('STAGE',144,6);txt('2-2',144,18);
+ txt('TIME',208,6);txt(pad(time,3),208,18);
+}
+function drawCoinSmall(x,y){g.fillStyle='#ac7c00';g.fillRect(x,y,8,10);g.fillStyle='#f8b800';g.fillRect(x+1,y+1,6,8);g.fillStyle='#fce0a8';g.fillRect(x+2,y+2,1,5)}
+
+/* ---------- questions ---------- */
+const LS_Q='reefdive.questions.v1',LS_S='reefdive.settings.v1';
+const DEF=[
+ {type:'mc',q:'She ___ to school every day.',options:['go','goes','going','gone'],correct:1,hint:"The subject is 'she' (third person singular). In the simple present, the verb takes -s or -es."},
+ {type:'mc',q:'They ___ playing football when it started to rain.',options:['was','were','are','is'],correct:1,hint:"This is the past continuous: was/were + verb-ing. Pick the one that goes with 'they'."},
+ {type:'mc',q:"What is the opposite of 'ancient'?",options:['old','modern','historic','early'],correct:1,hint:"'Ancient' means very old. Its opposite means belonging to the present time."},
+ {type:'mc',q:'I have lived in Jakarta ___ 2015.',options:['for','since','during','ago'],correct:1,hint:"Use 'since' with a starting point in time (a year, a date) and 'for' with a length of time."},
+ {type:'mc',q:'Choose the correct sentence.',options:["He don't like fish.","He doesn't likes fish.","He doesn't like fish.","He not like fish."],correct:2,hint:"After doesn't, the verb goes back to its base form without -s."},
+ {type:'mc',q:'My brother is ___ than me.',options:['tall','taller','tallest','more tall'],correct:1,hint:"There is the word 'than', so use the comparative form."},
+ {type:'mc',q:'We usually have lunch ___ noon.',options:['at','on','in','by'],correct:0,hint:"Use the same preposition for exact times such as noon, midnight and 7 o'clock."},
+ {type:'mc',q:'If it rains tomorrow, we ___ at home.',options:['stay','stayed','will stay','would stayed'],correct:2,hint:'First conditional: if + simple present, then will + base verb.'},
+ {type:'mc',q:'Which word is a noun?',options:['quickly','beautiful','happiness','run'],correct:2,hint:'A noun names a person, place, thing or idea.'},
+ {type:'essay',q:"Write the past tense of the verb 'buy'.",answers:['bought'],hint:'This is an irregular verb, so do not add -ed.'},
+ {type:'essay',q:"Write the plural form of 'child'.",answers:['children'],hint:'The plural is irregular. Do not just add -s.'},
+ {type:'essay',q:"Translate into English: 'Saya suka membaca buku.'",answers:['I like reading books','I like to read books','I like reading','I like to read','I love reading books','I enjoy reading books'],hint:"Start with 'I like', then use 'read' as reading or to read."},
+ {type:'essay',q:'Complete with the superlative form: She is the ___ student in our class. (smart)',answers:['smartest','the smartest'],hint:'For short adjectives, the superlative ends in -est.'}
+];
+const clone=o=>JSON.parse(JSON.stringify(o));
+function validQ(q){if(!q||typeof q.q!=='string'||!q.q.trim())return false;
+ if(q.type==='mc')return Array.isArray(q.options)&&q.options.length===4&&q.options.every(o=>typeof o==='string'&&o.trim())&&Number.isInteger(q.correct)&&q.correct>=0&&q.correct<4;
+ if(q.type==='essay')return Array.isArray(q.answers)&&q.answers.some(a=>typeof a==='string'&&a.trim());return false}
+let qs=(()=>{if(API)return clone(DEF);try{const a=JSON.parse(localStorage.getItem(LS_Q)||'null');if(Array.isArray(a)&&a.length>=5&&a.every(validQ))return a}catch(e){}return clone(DEF)})();
+let settings=(()=>{try{const s=JSON.parse(localStorage.getItem(LS_S)||'null');if(s&&typeof s==='object')return{shuffle:s.shuffle!==false}}catch(e){}return{shuffle:true}})();
+const saveQs=()=>{try{localStorage.setItem(LS_Q,JSON.stringify(qs))}catch(e){}pushConfig()};
+const saveSet=()=>{try{localStorage.setItem(LS_S,JSON.stringify(settings))}catch(e){}pushConfig()};
+function pick5(){const a=qs.slice();if(settings.shuffle)for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,5)}
+const norm=s=>String(s).toLowerCase().replace(/['’]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+
+/* ---------- quiz popup ---------- */
+let cur=null,locked=false;
+const el=id=>document.getElementById(id);
+const PRAISE=['Great job!','Excellent!','Well done!','Perfect answer!','Awesome, that is correct!'];
+function openQuiz(b){cur=b;state='quiz';clearKeys();el('quiz').hidden=false;showQ()}
+function showQ(){const q=cur.q;locked=false;
+ el('qHead').textContent='QUESTION '+(cur.idx+1)+' OF 5';el('qType').textContent=q.type==='mc'?'Multiple choice':'Essay';el('qText').textContent=q.q;
+ el('qFb').hidden=true;el('qRetry').hidden=true;el('qNext').hidden=true;el('qSkip').hidden=false;el('qSkip').textContent='SKIP';
+ const mc=el('qMc'),es=el('qEs');mc.innerHTML='';
+ if(q.type==='mc'){mc.hidden=false;es.hidden=true;
+  q.options.forEach((o,i)=>{const bt=document.createElement('button');bt.type='button';bt.className='ob';
+   const l=document.createElement('span');l.className='l';l.textContent='ABCD'[i];const t=document.createElement('span');t.textContent=o;bt.append(l,t);
+   bt.addEventListener('click',()=>judge(i===q.correct,bt));mc.append(bt)});
+  setTimeout(()=>el('quizCard').focus(),0)}
+ else{mc.hidden=true;es.hidden=false;const inp=el('qInput');inp.value='';inp.disabled=false;el('qSend').disabled=false;setTimeout(()=>inp.focus(),30)}}
+function judge(ok,btn){if(locked)return;locked=true;const q=cur.q,fb=el('qFb');
+ if(ok){cur.state=1;map[cur.r][cur.c]=3;cur.bump=10;score+=1000;coins+=10;answered++;sfx.ok();
+  popText('+1000',cur.c*T-8,cur.r*T-14,'#ffe060');popText('+10 COINS',cur.c*T-14,cur.r*T-24,'#ffe060');
+  fb.className='fb ok';fb.textContent=PRAISE[Math.floor(Math.random()*PRAISE.length)]+' +1000 points and +10 coins.';
+  if(btn)btn.classList.add('ok');el('qMc').querySelectorAll('button').forEach(x=>x.disabled=true);
+  el('qInput').disabled=true;el('qSend').disabled=true;el('qSkip').hidden=true;el('qNext').hidden=false;el('qNext').focus()}
+ else{sfx.no();fb.className='fb no';fb.textContent='Not quite. Hint: '+(q.hint&&q.hint.trim()?q.hint:'Read the question carefully and try again.');
+  if(btn)btn.classList.add('no');el('qMc').querySelectorAll('button').forEach(x=>x.disabled=true);
+  el('qInput').disabled=true;el('qSend').disabled=true;el('qSkip').textContent='KEEP PLAYING';el('qRetry').hidden=false;el('qRetry').focus()}
+ fb.hidden=false}
+el('qEs').addEventListener('submit',e=>{e.preventDefault();if(locked)return;const v=norm(el('qInput').value);if(!v)return;judge(cur.q.answers.some(a=>norm(a)===v),null)});
+el('qRetry').addEventListener('click',()=>{if(!cur)return;const q=cur.q;showQ();if(q.type==='essay')el('qInput').focus()});
+el('qNext').addEventListener('click',closeQuiz);
+el('qSkip').addEventListener('click',closeQuiz);
+function closeQuiz(){el('quiz').hidden=true;cur=null;state='play';clearKeys();last=performance.now();if(document.activeElement)document.activeElement.blur()}
+
+/* ---------- finish / result ---------- */
+function ansText(q){return q.type==='mc'?q.options[q.correct]:q.answers.find(a=>a.trim())}
+function finish(reason){if(state==='result')return;state='result';clearKeys();sfx.end();
+ el('resTitle').textContent=reason==='time'?"TIME'S UP":'FINISHED!';
+ el('resMsg').textContent=reason==='time'?'Time ran out before you reached the flag.':'You reached the finish line!';
+ el('resScore').textContent=pad(score,6);el('resCoins').textContent=coins;el('resQs').textContent=answered+' of 5';
+ const ul=el('resList');ul.innerHTML='';
+ blocks.forEach(b=>{const li=document.createElement('li'),tg=document.createElement('span'),t=document.createElement('span');
+  tg.className=b.state?'tagok':'tagno';tg.textContent=b.state?'CORRECT':'MISSED';
+  t.textContent=b.q.q+(b.state?'':'  → '+ansText(b.q));li.append(tg,t);ul.append(li)});
+ el('resultScreen').hidden=false;setTimeout(()=>el('againBtn').focus(),50);saveRun(reason)}
+function startGame(){audio();runQs=pick5();resetLevel();state='play';clearKeys();
+ el('titleScreen').hidden=true;el('resultScreen').hidden=true;last=performance.now();if(document.activeElement)document.activeElement.blur()}
+function toMenu(){state='title';resetLevelPreview();el('resultScreen').hidden=true;el('titleScreen').hidden=false}
+function resetLevelPreview(){runQs=pick5();resetLevel()}
+
+/* ---------- input ---------- */
+function clearKeys(){for(const k in keys)keys[k]=false;for(const k in touch)touch[k]=false;swimEdge=false;document.querySelectorAll('.cb.on,.swim.on').forEach(n=>n.classList.remove('on'))}
+const kmap={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',ArrowDown:'down',s:'down',S:'down',ArrowUp:'swim',w:'swim',W:'swim',' ':'swim'};
+addEventListener('keydown',e=>{
+ if(state==='quiz'){
+  if(e.key==='Escape'&&!el('qSkip').hidden){closeQuiz();return}
+  if(e.key==='Enter'&&!el('qNext').hidden&&document.activeElement!==el('qNext')){e.preventDefault();closeQuiz();return}
+  if(cur&&cur.q.type==='mc'&&!locked&&!/INPUT|TEXTAREA/.test(e.target.tagName)){const i='1234'.indexOf(e.key)>=0?'1234'.indexOf(e.key):'abcd'.indexOf(e.key.toLowerCase());
+   if(i>=0&&e.key.length===1){const b=el('qMc').children[i];if(b){e.preventDefault();b.click()}}}
+  return}
+ if(state!=='play'||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+ const k=kmap[e.key];if(!k)return;e.preventDefault();
+ if(k==='swim'&&!keys.swim)swimEdge=true;keys[k]=true});
+addEventListener('keyup',e=>{const k=kmap[e.key];if(k)keys[k]=false});
+addEventListener('blur',clearKeys);
+document.querySelectorAll('#controls [data-k]').forEach(b=>{const k=b.dataset.k==='up'?'swim':b.dataset.k;
+ b.addEventListener('pointerdown',e=>{e.preventDefault();audio();try{b.setPointerCapture(e.pointerId)}catch(x){}if(state!=='play')return;if(k==='swim'&&!touch.swim)swimEdge=true;touch[k]=true;b.classList.add('on')});
+ const up=()=>{touch[k]=false;b.classList.remove('on')};
+ b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);
+ b.addEventListener('contextmenu',e=>e.preventDefault())});
+
+/* ---------- loop ---------- */
+function frame(now){if(!last)last=now;let dt=now-last;last=now;if(dt>100)dt=100;acc+=dt;
+ while(acc>=1000/60){tick++;if(state==='play')update();acc-=1000/60}
+ draw();requestAnimationFrame(frame)}
+
+/* ---------- question editor ---------- */
+let editIdx=-1,fType='mc';
+const mk=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n};
+function armed(btn,label,run){btn.addEventListener('click',()=>{if(btn.disabled)return;if(btn.dataset.armed){run()}else{btn.dataset.armed='1';btn.textContent='SURE?';btn.classList.add('danger');setTimeout(()=>{if(btn.isConnected){btn.dataset.armed='';btn.textContent=label;btn.classList.remove('danger')}},3000)}})}
+function renderList(){const ol=el('qList');ol.innerHTML='';
+ qs.forEach((q,i)=>{const li=mk('li','qrow');const b=mk('span','badge '+q.type,q.type==='mc'?'PG':'ESSAY');const t=mk('span','qt',q.q);t.title=q.q;
+  const ed=mk('button','btn small','EDIT');ed.type='button';ed.addEventListener('click',()=>openForm(i));
+  const del=mk('button','btn small','DELETE');del.type='button';
+  if(qs.length<=5){del.disabled=true;del.title='Keep at least 5 questions so every ? block has one'}
+  armed(del,'DELETE',()=>{if(qs.length<=5)return;qs.splice(i,1);saveQs();renderList()});
+  li.append(b,t,ed,del);ol.append(li)});
+ el('edCount').textContent=qs.length+' questions in the bank. Each game uses 5'+(qs.length<=5?' (minimum 5, delete is disabled).':'.')}
+function setType(t){fType=t;el('tMc').setAttribute('aria-pressed',t==='mc');el('tEs').setAttribute('aria-pressed',t==='essay');el('mcBox').hidden=t!=='mc';el('esBox').hidden=t!=='essay'}
+function renderKeys(arr){const box=el('keys');box.innerHTML='';
+ arr.forEach((v,i)=>{const row=mk('div','keyrow');const inp=document.createElement('input');inp.type='text';inp.id='fK'+i;inp.value=v;inp.setAttribute('aria-label','Accepted answer '+(i+1));inp.style.flex='1';
+  const x=mk('button','btn small','DELETE');x.type='button';x.disabled=arr.length<=1;x.addEventListener('click',()=>{const cur=readKeys();cur.splice(i,1);renderKeys(cur.length?cur:[''])});
+  row.append(inp,x);box.append(row)})}
+const readKeys=()=>[...el('keys').querySelectorAll('input')].map(i=>i.value);
+function openForm(i){editIdx=i;const q=i>=0?qs[i]:null;el('fErr').textContent='';
+ el('formTitle').textContent=q?'Edit question '+(i+1):'New question';setType(q?q.type:'mc');el('fQ').value=q?q.q:'';
+ for(let k=0;k<4;k++){el('fO'+k).value=q&&q.type==='mc'?q.options[k]:'';el('fC'+k).checked=q&&q.type==='mc'?q.correct===k:k===0}
+ renderKeys(q&&q.type==='essay'?q.answers.slice():['']);el('fH').value=q?(q.hint||''):'';
+ el('edList').hidden=true;el('edForm').hidden=false;el('fQ').focus()}
+function closeForm(){el('edForm').hidden=true;el('edList').hidden=false;renderList()}
+el('tMc').addEventListener('click',()=>setType('mc'));el('tEs').addEventListener('click',()=>setType('essay'));
+el('addKey').addEventListener('click',()=>{const c=readKeys();c.push('');renderKeys(c);el('fK'+(c.length-1)).focus()});
+el('edForm').addEventListener('submit',e=>{e.preventDefault();const err=el('fErr'),q=el('fQ').value.trim();
+ if(!q){err.textContent='Please type the question.';el('fQ').focus();return}
+ let o;
+ if(fType==='mc'){const opts=[0,1,2,3].map(k=>el('fO'+k).value.trim());
+  if(opts.some(x=>!x)){err.textContent='Fill in all four choices A to D.';return}
+  const c=[0,1,2,3].find(k=>el('fC'+k).checked);o={type:'mc',q,options:opts,correct:c==null?0:c,hint:el('fH').value.trim()}}
+ else{const seen=new Set(),ans=[];readKeys().map(s=>s.trim()).filter(Boolean).forEach(s=>{const n=norm(s);if(n&&!seen.has(n)){seen.add(n);ans.push(s)}});
+  if(!ans.length){err.textContent='Add at least one accepted answer.';return}
+  o={type:'essay',q,answers:ans,hint:el('fH').value.trim()}}
+ if(editIdx>=0)qs[editIdx]=o;else qs.push(o);saveQs();closeForm()});
+el('fCancel').addEventListener('click',closeForm);
+el('addQ').addEventListener('click',()=>openForm(-1));
+armed(el('resetQ'),'DEFAULT QUESTIONS',()=>{qs=clone(DEF);saveQs();renderList()});
+el('optShuffle').addEventListener('change',e=>{settings.shuffle=e.target.checked;saveSet()});
+el('ioCopy').addEventListener('click',()=>{const t=el('ioText');t.value=JSON.stringify(qs,null,1);t.select();
+ let p;try{p=navigator.clipboard.writeText(t.value)}catch(e){p=null}
+ const msg=el('ioMsg');if(p&&p.then)p.then(()=>msg.textContent='Questions copied.',()=>msg.textContent='Copy it manually from the box above.');else msg.textContent='Copy it manually from the box above.'});
+el('ioApply').addEventListener('click',()=>{const msg=el('ioMsg');
+ try{const a=JSON.parse(el('ioText').value);if(!Array.isArray(a)||a.length<5||!a.every(validQ)){msg.textContent='Invalid format. A list of at least 5 complete questions is required.';return}
+  qs=a.map(q=>q.type==='mc'?{type:'mc',q:q.q.trim(),options:q.options.map(s=>s.trim()),correct:q.correct,hint:(q.hint||'').toString()}:{type:'essay',q:q.q.trim(),answers:q.answers.filter(s=>typeof s==='string'&&s.trim()),hint:(q.hint||'').toString()});
+  saveQs();renderList();msg.textContent='Questions applied: '+qs.length+'.'}
+ catch(e){msg.textContent='That text is not valid JSON.'}});
+function openEditor(){el('optShuffle').checked=settings.shuffle;el('edForm').hidden=true;el('edList').hidden=false;el('ioMsg').textContent='';setSyncNote();renderList();el('editor').hidden=false;el('edClose').focus()}
+el('edClose').addEventListener('click',()=>{el('editor').hidden=true;resetLevelPreview();el('editBtn').focus()});
+
+/* ---------- wiring ---------- */
+el('startBtn').addEventListener('click',tryStart);
+el('againBtn').addEventListener('click',startGame);
+el('menuBtn').addEventListener('click',()=>{toMenu();el('startBtn').focus()});
+el('muteBtn').addEventListener('click',()=>{muted=!muted;el('muteBtn').textContent='SOUND: '+(muted?'OFF':'ON');if(!muted)audio()});
+try{document.fonts.load('8px "Press Start 2P"')}catch(e){}
+
+/* ---------- player, scores, online leaderboard ---------- */
+const LS_P='reefdive.player.v1',LS_R='reefdive.runs.v1',LS_O='reefdive.outbox.v1';
+const jget=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v==null?d:v}catch(e){return d}};
+const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const cleanName=(s,n)=>String(s==null?'':s).replace(/[\u0000-\u001f<>]/g,'').replace(/\s+/g,' ').trim().slice(0,n||24);
+const fmtDate=t=>{try{return new Date(t).toLocaleString([],{dateStyle:'short',timeStyle:'short'})}catch(e){return String(t)}};
+const fmtTime=s=>Math.floor(s/60)+':'+pad(s%60,2);
+const reasonText=r=>r==='goal'?'Finished':'Time up';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const pName=()=>cleanName(el('pName').value),pClass=()=>cleanName(el('pClass').value,12);
+{const pl=jget(LS_P,null);if(pl){el('pName').value=pl.name||'';el('pClass').value=pl.klass||''}}
+const keyOf=(n,k)=>String(n).toLowerCase()+'|'+String(k||'').toLowerCase();
+
+async function http(method,payload){
+ const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),15000);
+ try{
+  const res=method==='GET'?await fetch(API+(API.indexOf('?')>=0?'&':'?')+'action='+payload+'&t='+Date.now(),{signal:ctl.signal})
+   :await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),signal:ctl.signal});
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  return await res.json()}
+ finally{clearTimeout(t)}}
+const apiGet=a=>http('GET',a),apiPost=o=>http('POST',o);
+
+/* shared question bank */
+let teacherPass=null,pushTimer=null,pushing=false,pushDirty=false;
+async function refreshConfig(){
+ if(!API||!el('editor').hidden||pushTimer||pushing)return false;
+ try{const r=await apiGet('config');
+  if(r&&r.ok){if(Array.isArray(r.questions)&&r.questions.length>=5&&r.questions.every(validQ)){qs=r.questions;if(typeof r.shuffle==='boolean')settings.shuffle=r.shuffle;if(state==='title')resetLevelPreview()}return true}}
+ catch(e){}
+ return false}
+function setSync(t){el('edSync').textContent=t}
+function setSyncNote(){setSync(API?'Changes are saved to your Google Sheet and used by all students.':'Local mode: questions are saved in this browser only.')}
+function pushConfig(){
+ if(!API||!teacherPass)return;
+ clearTimeout(pushTimer);setSync('Saving...');pushTimer=setTimeout(doPush,500)}
+async function doPush(){
+ pushTimer=null;if(pushing){pushDirty=true;return}
+ pushing=true;
+ try{const r=await apiPost({action:'saveConfig',pass:teacherPass,questions:qs,shuffle:settings.shuffle});
+  setSync(r&&r.ok?'Saved. Students get these questions when they open or replay the game.':'Not saved: '+((r&&r.message)||'server error'))}
+ catch(e){setSync('Not saved: cannot reach the server. Change something again to retry.')}
+ finally{pushing=false;if(pushDirty){pushDirty=false;doPush()}}}
+
+/* teacher unlock */
+el('editBtn').addEventListener('click',()=>{
+ if(!API||teacherPass){openEditor();return}
+ el('auErr').textContent='';el('auPass').value='';el('auth').hidden=false;el('auPass').focus()});
+el('auCancel').addEventListener('click',()=>{el('auth').hidden=true});
+el('auForm').addEventListener('submit',async e=>{
+ e.preventDefault();const pw=el('auPass').value;if(!pw)return;
+ const go=el('auGo');go.disabled=true;el('auErr').textContent='Checking...';
+ try{const r=await apiPost({action:'auth',pass:pw});
+  if(r&&r.ok){teacherPass=pw;el('auth').hidden=true;openEditor()}
+  else el('auErr').textContent=(r&&r.message)||'Wrong passcode.'}
+ catch(x){el('auErr').textContent='Cannot reach the server. Check the connection.'}
+ go.disabled=false});
+
+/* my scores (this device) */
+function myRuns(){const n=pName().toLowerCase();return jget(LS_R,[]).filter(r=>r.name&&r.name.toLowerCase()===n)}
+function renderMine(){
+ const m=myRuns(),n=el('myStat');
+ n.textContent=m.length?'Best score: '+pad(Math.max(...m.map(r=>r.score)),6)+' · Games played: '+m.length:'Touch a ? block to answer a question. Reach the flag to finish.'}
+el('mineBtn').addEventListener('click',()=>{
+ if(!pName()){el('pErr').textContent='Type your name to see your scores.';el('pName').focus();return}
+ el('pErr').textContent='';
+ const body=el('mineBody');body.innerHTML='';const m=myRuns().slice().reverse();
+ el('mineNote').textContent=m.length?'Games played on this device as '+pName()+'.':'No games yet for '+pName()+' on this device.';
+ m.forEach(r=>{const tr=document.createElement('tr');[fmtDate(r.t),pad(r.score,6),r.coins,r.ans+' of '+r.total,reasonText(r.reason)].forEach((v,i)=>tr.append(mk('td',i>0&&i<4?'n':'',String(v))));body.append(tr)});
+ el('mine').hidden=false;el('mineClose').focus()});
+el('mineClose').addEventListener('click',()=>{el('mine').hidden=true});
+el('pName').addEventListener('input',renderMine);
+
+/* saving a finished game */
+let lastRec=null,flushing=false;
+const setSave=t=>{el('resSave').textContent=t};
+async function flushOutbox(){
+ if(flushing)return false;flushing=true;
+ try{let out=jget(LS_O,[]);
+  while(out.length){
+   const r=await apiPost({action:'submit',record:out[0]});
+   if(r&&(r.ok||r.permanent)){out.shift();jset(LS_O,out)}else return false}
+  return true}
+ catch(e){return false}
+ finally{flushing=false}}
+async function saveRun(reason){
+ const rec={rid:Date.now().toString(36)+Math.random().toString(36).slice(2,8),t:Date.now(),name:pName(),klass:pClass(),score,coins,ans:answered,total:5,reason,left:time,
+  qs:blocks.map(b=>({q:b.q.q.slice(0,120),ok:b.state?1:0}))};
+ lastRec=rec;el('resRank').textContent='';
+ const runs=jget(LS_R,[]);runs.push(rec);jset(LS_R,runs.slice(-80));renderMine();
+ if(!API){setSave('Saved on this device only.');return}
+ setSave('Saving your score...');
+ const o=jget(LS_O,[]);o.push(rec);jset(LS_O,o);
+ if(await flushOutbox()){setSave('Score saved to the class leaderboard.');showRank(rec)}
+ else setSave('Could not reach the server. Your score is kept on this device and will be sent next time.')}
+async function showRank(rec){
+ if(!(await loadBoard()))return;
+ const all=boardData.players.slice().sort((a,b)=>b.best-a.best),i=all.findIndex(p=>keyOf(p.name,p.klass)===keyOf(rec.name,rec.klass));
+ if(i>=0)el('resRank').textContent='Your rank: #'+(i+1)+' of '+all.length+' players (best score '+pad(all[i].best,6)+')'}
+
+/* leaderboard */
+let boardData=null,boardTab=0,boardTimer=null,boardAt=0,boardFail=false;
+function aggregate(rows){
+ const m=new Map();
+ rows.forEach(r=>{if(!r.name)return;const k=keyOf(r.name,r.klass);let p=m.get(k);
+  if(!p){p={name:r.name,klass:r.klass||'',best:0,correct:0,fast:null,games:0};m.set(k,p)}
+  p.games++;if(r.score>p.best)p.best=r.score;if(r.ans>p.correct)p.correct=r.ans;
+  if(r.reason==='goal'&&r.ans>=(r.total||5)){const u=300-r.left;if(p.fast===null||u<p.fast)p.fast=u}});
+ return [...m.values()]}
+async function loadBoard(){
+ if(!API){boardData={players:aggregate(jget(LS_R,[]))};boardAt=Date.now();boardFail=false;return true}
+ try{const r=await apiGet('leaderboard');
+  if(r&&r.ok&&Array.isArray(r.players)){boardData={players:r.players};boardAt=Date.now();boardFail=false;return true}}
+ catch(e){}
+ boardFail=true;return false}
+function renderBoard(){
+ const note=el('bdNote'),body=el('bdBody'),head=el('bdHead');body.innerHTML='';head.innerHTML='';
+ for(let i=0;i<3;i++)el('bdT'+i).setAttribute('aria-pressed',String(i===boardTab));
+ if(!boardData){note.textContent=boardFail?'Cannot reach the server yet.':'Loading...';return}
+ const sel=el('bdClass'),cur=sel.value,classes=[...new Set(boardData.players.map(p=>p.klass).filter(Boolean))].sort();
+ sel.innerHTML='';const all=document.createElement('option');all.value='';all.textContent='All classes';sel.append(all);
+ classes.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent='Class '+c;sel.append(o)});sel.value=classes.includes(cur)?cur:'';
+ let rows=boardData.players.filter(p=>!sel.value||p.klass===sel.value);
+ let cols;
+ if(boardTab===0){rows.sort((a,b)=>b.best-a.best||b.correct-a.correct);cols=[['SCORE',p=>pad(p.best,6)],['GAMES',p=>p.games]]}
+ else if(boardTab===1){rows.sort((a,b)=>b.correct-a.correct||b.best-a.best);cols=[['CORRECT',p=>p.correct+' of 5'],['SCORE',p=>pad(p.best,6)]]}
+ else{rows=rows.filter(p=>p.fast!=null).sort((a,b)=>a.fast-b.fast||b.best-a.best);cols=[['TIME',p=>fmtTime(p.fast)],['SCORE',p=>pad(p.best,6)]]}
+ ['#','NAME','CLASS'].concat(cols.map(c=>c[0])).forEach((h,i)=>head.append(mk('th',i===0||i>2?'n':'',h)));
+ const me=keyOf(pName(),pClass());
+ rows.slice(0,50).forEach((p,i)=>{const tr=document.createElement('tr');if(keyOf(p.name,p.klass)===me)tr.className='me';
+  tr.append(mk('td','n',String(i+1)),mk('td','',p.name),mk('td','',p.klass||'-'));cols.forEach(c=>tr.append(mk('td','n',String(c[1](p)))));body.append(tr)});
+ if(!rows.length){const tr=document.createElement('tr'),td=mk('td','empty',boardTab===2?'No 5/5 finish yet. Answer all 5 questions correctly and reach the flag!':'No scores yet. Be the first to play!');td.colSpan=3+cols.length;tr.append(td);body.append(tr)}
+ const age=Math.max(0,Math.round((Date.now()-boardAt)/1000));
+ note.textContent=(API?(boardFail?'Cannot reach the server. Showing the last data. ':'Updated '+age+' s ago. Refreshes every 15 s. '):'Scores from this device only. ')+(boardTab===2?'Fastest = quickest finish with all 5 questions correct.':'')}
+async function refreshBoard(){await loadBoard();renderBoard()}
+function openBoard(){
+ el('board').hidden=false;renderBoard();refreshBoard();
+ clearInterval(boardTimer);boardTimer=setInterval(refreshBoard,15000);el('bdClose').focus()}
+function closeBoard(){el('board').hidden=true;clearInterval(boardTimer)}
+el('boardBtn').addEventListener('click',openBoard);
+el('resBoardBtn').addEventListener('click',openBoard);
+el('bdClose').addEventListener('click',closeBoard);
+el('bdRefresh').addEventListener('click',refreshBoard);
+el('bdClass').addEventListener('change',renderBoard);
+[0,1,2].forEach(i=>el('bdT'+i).addEventListener('click',()=>{boardTab=i;renderBoard()}));
+addEventListener('keydown',e=>{if(e.key!=='Escape')return;
+ if(!el('auth').hidden){el('auth').hidden=true;return}
+ if(!el('board').hidden){closeBoard();return}
+ if(!el('mine').hidden){el('mine').hidden=true}});
+
+/* start */
+function tryStart(){
+ const nm=pName();
+ if(!nm){el('pErr').textContent='Please type your name first.';el('pName').focus();return}
+ el('pName').value=nm;el('pClass').value=pClass();el('pErr').textContent='';
+ jset(LS_P,{name:nm,klass:pClass()});renderMine();startGame()}
+['againBtn','menuBtn'].forEach(id=>el(id).addEventListener('click',()=>{refreshConfig();flushOutbox()}));
+try{document.fonts.load('8px "Press Start 2P"')}catch(e){}
+renderMine();
+resetLevelPreview();
+requestAnimationFrame(frame);
+(async()=>{
+ if(!API)return;
+ const b=el('startBtn');b.disabled=true;b.textContent='LOADING...';
+ await Promise.race([refreshConfig(),sleep(9000)]);
+ b.disabled=false;b.textContent='START';
+ flushOutbox();
+ setInterval(()=>{if(state==='title')refreshConfig()},60000);
+ addEventListener('online',flushOutbox)})();
+})();
+</script>
+</body>
+</html>
